@@ -1,0 +1,90 @@
+/*
+ * IRremote: IRrecvDemo - demonstrates receiving IR codes with IRrecv
+ * An IR detector/demodulator must be connected to the input RECV_PIN.
+ * Version 0.1 July, 2009
+ * Copyright 2009 Ken Shirriff
+ * http://arcfn.com
+ */
+
+#include <IRremote.h>
+
+int RECV_PIN = 2,sari=6,kirmizi=5,yesil=4,buzzer=7;
+
+IRrecv IR0(RECV_PIN);
+
+decode_results results;
+
+#define tus_guc 16753245    //1 tusu
+#define tus_sondur 16750695 //0 tusu
+#define tus_2 16736925
+#define tus_3 16769565
+#define tus_4 16720605
+#define tus_ok 16726215
+
+
+void setup()
+{
+  pinMode(sari,OUTPUT);
+  pinMode(kirmizi,OUTPUT);
+  pinMode(yesil,OUTPUT);
+  pinMode(buzzer,OUTPUT);
+
+  Serial.begin(9600);
+  
+  Serial.println("Enabling IRin");
+  IR0.enableIRIn(); // Start the receiver
+  Serial.println("Enabled IRin");
+}
+int k=0;  //kontrol edecek
+void loop() {
+  if(IR0.decode(&results)){ //tus kodu aliciya ulastiysa
+    Serial.println(results.value);
+    IR0.resume();   //yeniden farkli tuslara basildiginda tekrar calis
+
+    if(k==0){
+      if(results.value==tus_guc){
+        
+        for(int i=0;i<6;i++){
+          digitalWrite(buzzer,1);
+          digitalWrite(kirmizi,1);
+          digitalWrite(sari,1);
+          digitalWrite(yesil,1);
+          delay(150);
+          digitalWrite(buzzer,0);
+          digitalWrite(kirmizi,0);
+          digitalWrite(sari,0);
+          digitalWrite(yesil,0);
+          delay(150);
+        }
+        
+        k=1;  //bu dongu calistigini gostercek ve bir daha girmicek
+      }
+    }else{
+      if(results.value==tus_sondur){
+        Serial.println("tuslar sondu...");
+        digitalWrite(buzzer,1);
+        digitalWrite(kirmizi,0);
+        digitalWrite(sari,0);
+        digitalWrite(yesil,0);
+        delay(200);
+        digitalWrite(buzzer,0);
+        k=0;
+        //exit(1);   program tamamen biter daha calismaz
+      }
+      switch(results.value){
+        case tus_2:
+          digitalWrite(sari,!digitalRead(sari));  //yaniyorsa soner sonukse yanar
+          break;
+        case tus_3:
+          digitalWrite(kirmizi,!digitalRead(kirmizi));  //yaniyorsa soner sonukse yanar
+          break;
+        case tus_4:
+          digitalWrite(yesil,!digitalRead(yesil));  //yaniyorsa soner sonukse yanar
+          break;
+        default:
+          Serial.println("boyle bir tus tanimlanmadi..");
+          break;
+      }
+    }
+  }
+}
